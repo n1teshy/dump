@@ -6,16 +6,17 @@ import json
 def note_to_script(src_path, dest_path):
     try:
         notebook = json.load(open(src_path))
-    except json.JSONDecodeError:
+        cells = notebook["cells"]
+    except json.JSONDecodeError | KeyError:
         print_exit_message("Source might not be a notebook")
-    cells = notebook["cells"]
+        
     with open(dest_path, "a", encoding="utf-8") as script:
         cell_count = len(cells)
         for cell_idx, cell in enumerate(cells, start=1):
             for line_idx, line in enumerate(cell["source"], start=1):
                 line_count = len(cell["source"])
                 if line.startswith("!"):
-                    continue
+                    line = f"# {line.strip('! ')}"
                 script.write(line)
                 if line_idx == line_count:
                     script.write("\n\n")
