@@ -32,11 +32,16 @@ def parse_block_indices(block_arg, total_cells):
     indices = []
     if block_arg:
         block_arg = block_arg.strip()
-        if re.match(r"^\d+:\d+$", block_arg):
-            start, end = map(int, block_arg.split(":"))
-            if start >= end or start < 0:
-                print_exit_message("Invalid range in --blocks")
-            indices = list(range(start, min(end, total_cells)))
+        if ":" in block_arg:
+            try:
+                start, end = [arg.strip() for arg in block_arg.split(":")]
+                start = max(int(start or 0), 0)
+                end = min(int(end or total_cells), total_cells)
+                if start >= end or start < 0:
+                    print_exit_message("Invalid range in --blocks")
+                indices = list(range(start, end))
+            except ValueError:
+                print_exit_message("Invalid format for --blocks")
         else:
             try:
                 indices = [int(i.strip()) for i in block_arg.split(",") if i.strip().isdigit()]
