@@ -4,6 +4,7 @@ import json
 import argparse
 import subprocess
 import platform
+import re
 
 REQUIRED_LIBRARIES = {
     "pygments": "pygments"
@@ -27,7 +28,25 @@ def check_dependencies():
         sys.exit(1)
 
 
-def note_to_script(src_path, dest_path=None, copy=False):
+def parse_block_indices(block_arg, total_cells):
+    indices = []
+    if block_arg:
+        block_arg = block_arg.strip()
+        if re.match(r"^\d+:\d+$", block_arg):
+            start, end = map(int, block_arg.split(":"))
+            if start >= end or start < 0:
+                print_exit_message("Invalid range in --blocks")
+            indices = list(range(start, min(end, total_cells)))
+        else:
+            try:
+                indices = [int(i.strip()) for i in block_arg.split(",") if i.strip().isdigit()]
+                indices = [i for i in indices if i < total_cells]
+            except ValueError:
+                print_exit_message("Invalid format for --blocks")
+    return indices
+
+
+def note_to_script(src_path, dest_path=None, copy=False, block_arg=None):
     from pygments import highlight
     from pygments.lexers import PythonLexer
     from pygments.formatters import TerminalFormatter
@@ -39,9 +58,13 @@ def note_to_script(src_path, dest_path=None, copy=False):
     except (json.JSONDecodeError, KeyError):
         print_exit_message("Source might not be a valid notebook")
 
+    total_cells = len(cells)
+    selected_indices = parse_block_indices(block_arg, total_cells)
+    selected_cells = [cells[i] for i in selected_indices] if selected_indices else cells
+
     code_lines = []
-    cell_count = len(cells)
-    for cell_idx, cell in enumerate(cells, start=1):
+    cell_count = len(selected_cells)
+    for cell_idx, cell in enumerate(selected_cells, start=1):
         for line_idx, line in enumerate(cell.get("source", []), start=1):
             line_count = len(cell["source"])
             if line.startswith("!"):
@@ -92,6 +115,11 @@ def main():
     parser.add_argument(
         "--copy", action="store_true", help="Copy the converted code to clipboard (Windows only)"
     )
+    parser.add_argument(
+        "--blocks",
+        type=str,
+        help="Comma-separated list of cell indices (e.g. 0,2,5) or a range (e.g. 2:6)"
+    )
     args = parser.parse_args(sys.argv[1:] or ["--help"])
 
     notebook_file = os.path.abspath(args.notebook_file)
@@ -102,7 +130,7 @@ def main():
     if not os.path.exists(notebook_file):
         print_exit_message("Source does not exist")
 
-    note_to_script(notebook_file, python_file, args.copy)
+    note_to_script(notebook_file, python_file, args.copy, args.blocks)
 
 
 if __name__ == "__main__":
