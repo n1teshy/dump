@@ -51,7 +51,7 @@ def parse_block_indices(block_arg, total_cells):
     return indices
 
 
-def note_to_script(src_path, dest_path=None, copy=False, block_arg=None):
+def note_to_script(src_path, dest_path=None, clip=False, block_arg=None):
     from pygments import highlight
     from pygments.lexers import PythonLexer
     from pygments.formatters import TerminalFormatter
@@ -83,7 +83,7 @@ def note_to_script(src_path, dest_path=None, copy=False, block_arg=None):
 
     code = "".join(code_lines)
 
-    if copy:
+    if clip:
         copy_to_clipboard(code)
     elif dest_path:
         with open(dest_path, "a", encoding="utf-8") as script:
@@ -119,7 +119,7 @@ def main():
         "python_file", nargs="?", default=None, help="Path to the destination Python script (.py)"
     )
     parser.add_argument(
-        "--copy", action="store_true", help="Copy the converted code to clipboard (Windows only)"
+        "--clip", action="store_true", help="Copy the converted code to clipboard (Windows only)"
     )
     parser.add_argument(
         "--blocks",
@@ -136,7 +136,7 @@ def main():
     if not os.path.exists(notebook_file):
         print_exit_message("Source does not exist")
 
-    note_to_script(notebook_file, python_file, args.copy, args.blocks)
+    note_to_script(notebook_file, python_file, args.clip, args.blocks)
 
 
 if __name__ == "__main__":
