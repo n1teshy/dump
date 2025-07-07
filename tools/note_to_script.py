@@ -65,7 +65,8 @@ def note_to_script(src_path, dest_path=None, copy=False, block_arg=None):
 
     total_cells = len(cells)
     selected_indices = parse_block_indices(block_arg, total_cells)
-    selected_cells = [cells[i] for i in selected_indices] if selected_indices else cells
+    selected_cells = [cells[i] for i in selected_indices if cells[i].get("cell_type") == "code"] if selected_indices else [cell for cell in cells if cell.get("cell_type") == "code"]
+
 
     code_lines = []
     cell_count = len(selected_cells)
